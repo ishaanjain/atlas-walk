@@ -1,4 +1,6 @@
 import argparse
+from train import Train
+from test import Test
 
 parser = argparse.ArgumentParser()
 

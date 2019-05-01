@@ -6,3 +6,7 @@ gym/gym/spaces/__pycache__/
 gym/gym/utils/__pycache__/
 gym/gym/wrappers/__pycache__/
 gym/gym/wrappers/monitoring/__pycache__/
+CDQN/__pycache__/
+CDQN/src/__pycache__/
+DDPG/__pycache__/
+DDPG/src/__pycache__/

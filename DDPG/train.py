@@ -4,6 +4,8 @@ import gym
 import roboschool
 import tensorflow as tf
 from datetime import datetime
+from src.NormalizedEnv import NormalizedEnv
+
 
 class Train:
     def __init__(self, args):
@@ -23,6 +25,9 @@ class Train:
                 print('Error: Failed to make new checkpoint directory')
                 sys.exit(1)
 
+        # create the humanoid environment
+        env = NormalizedEnv(gym.make("RoboschoolHumanoid-v1"))
+
         # build graph for DDPG network
         graph = tf.Graph()
         with graph.as_default():
@@ -34,13 +39,22 @@ class Train:
                 meta_graph_path = ckpt.model_checkpoint_path + '.meta'
                 restore = tf.train.import_meta_graph(meta_graph_path)
                 restore.restore(sess, tf.train.latest_checkpoint(checkpoint))
-                start_step = int(meta_graph_path.split("-")[2].split(".")[0])
+                step = int(meta_graph_path.split("-")[2].split(".")[0])
+                start_episode = step // self.max_steps
+                start_step = step % self.max_steps
             else:
                 sess.run(tf.global_variables_initializer())
-                start_step = 1
+                start_episode = 0
+                start_step = 0
 
             try:
-                pass
+                for episode in range(start_episode, self.args.max_episodes):
+                    state = env.reset()
+
+                    for step in range(start_step, self.max_steps):
+                        if self.args.render:
+                            env.render()
+
             except KeyboardInterrupt: # save training progress upon user exit
                 print('Saving models training progress to the `checkpoints` directory...')
                 save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=step)
