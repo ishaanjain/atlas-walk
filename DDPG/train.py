@@ -5,6 +5,7 @@ import roboschool
 import tensorflow as tf
 from datetime import datetime
 from src.NormalizedEnv import NormalizedEnv
+from src.DDPG import DDPG
 
 
 class Train:
@@ -14,10 +15,10 @@ class Train:
     def train(self):
         # get existing or create new checkpoint path
         if self.args.load_model is not None:
-            checkpoint = 'checkpoints/' + self.args.load_model
+            checkpoint = os.path.expanduser('checkpoints/' + self.args.load_model)
         else:
             checkpoint_name = datetime.now().strftime('%d%m%Y-%H%M')
-            checkpoint = 'checkpoints/' + checkpoint_name
+            checkpoint = os.path.expanduser('checkpoints/' + checkpoint_name)
 
             try:
                 os.makedirs(checkpoint)
@@ -31,7 +32,8 @@ class Train:
         # build graph for DDPG network
         graph = tf.Graph()
         with graph.as_default():
-            pass
+            model = DDPG(self.args, env)
+            saver = tf.train.Saver()
 
         with tf.Session(graph=graph) as sess:
             if self.args.load_model is not None: # restore graph and last saved training step
@@ -50,10 +52,20 @@ class Train:
             try:
                 for episode in range(start_episode, self.args.max_episodes):
                     state = env.reset()
+                    rewards = []
 
                     for step in range(start_step, self.max_steps):
                         if self.args.render:
                             env.render()
+
+                        action = model.noisy_action(state)
+                        next_state, reward, done, _ = env.step(action)
+                        model.perceive(state, action, reward, next_state)
+                        state = next_state
+                        rewards.append(reward)
+
+                    total_reward = np.mean(rewards)
+                    print("Episode {} - Average reward: {}".format(episode, total_reward))
 
             except KeyboardInterrupt: # save training progress upon user exit
                 print('Saving models training progress to the `checkpoints` directory...')
