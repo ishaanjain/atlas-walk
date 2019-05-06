@@ -34,7 +34,9 @@ class Train:
         graph = tf.Graph()
         with graph.as_default():
             model = CDQN(self.args, env)
-            saver = tf.train.Saver()
+
+            """ NOTE: uncomment once models have been implemented """
+            #saver = tf.train.Saver()
 
         with tf.Session(graph=graph) as sess:
             if self.args.load_model is not None: # restore graph and last saved training step
@@ -43,8 +45,8 @@ class Train:
                 restore = tf.train.import_meta_graph(meta_graph_path)
                 restore.restore(sess, tf.train.latest_checkpoint(checkpoint))
                 step = int(meta_graph_path.split("-")[2].split(".")[0])
-                start_episode = step // self.max_steps
-                start_step = step % self.max_steps
+                start_episode = step // self.args.max_steps
+                start_step = step % self.args.max_steps
             else:
                 sess.run(tf.global_variables_initializer())
                 start_episode = 0
@@ -59,11 +61,12 @@ class Train:
                         if self.args.render:
                             env.render()
 
-                        action = model.noisy_action(state)
-                        next_state, reward, done, _ = env.step(action)
-                        model.perceive(state, action, reward, next_state)
-                        state = next_state
-                        rewards.append(reward)
+                        """ NOTE: uncomment once functions have been implemented """
+                        #action = model.noisy_action(state)
+                        #next_state, reward, done, _ = env.step(action)
+                        #model.perceive(state, action, reward, next_state)
+                        #state = next_state
+                        #rewards.append(reward)
 
                     total_reward = np.mean(rewards)
                     print("Episode {} - Average reward: {}".format(episode, total_reward))
