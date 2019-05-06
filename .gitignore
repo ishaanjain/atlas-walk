@@ -9,5 +9,7 @@ gym/gym/wrappers/__pycache__/
 gym/gym/wrappers/monitoring/__pycache__/
 CDQN/__pycache__/
 CDQN/src/__pycache__/
+CDQN/checkpoints/
 DDPG/__pycache__/
 DDPG/src/__pycache__/
+DDPG/checkpoints/
