@@ -36,9 +36,11 @@ class Train:
             model = DDPG(self.args, env)
 
             """ NOTE: uncomment once models have been implemented """
-            #saver = tf.train.Saver()
+            # saver = tf.train.Saver()
 
         with tf.Session(graph=graph) as sess:
+            model.initSess(sess)
+
             if self.args.load_model is not None: # restore graph and last saved training step
                 ckpt = tf.train.get_checkpoint_state(checkpoint)
                 meta_graph_path = ckpt.model_checkpoint_path + '.meta'
@@ -62,11 +64,11 @@ class Train:
                             env.render()
 
                         """ NOTE: uncomment once functions have been implemented """
-                        #action = model.noisy_action(state)
-                        #next_state, reward, done, _ = env.step(action)
-                        #model.perceive(state, action, reward, next_state)
-                        #state = next_state
-                        #rewards.append(reward)
+                        action = model.noisy_action(state)
+                        next_state, reward, done, _ = env.step(action)
+                        model.perceive(state, action, reward, next_state)
+                        state = next_state
+                        rewards.append(reward)
 
                     total_reward = np.mean(rewards)
                     print("Episode {} - Average reward: {}".format(episode, total_reward))
