@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 # training args
 parser.add_argument('--actor_learning_rate', type=float, default=1e-4)
 parser.add_argument('--critic_learning_rate', type=float, default=1e-3)
-parser.add_argument('--batch_size', type=int, default=100)
+parser.add_argument('--batch_size', type=int, default=64)  # changed from 100
 parser.add_argument('--tau', type=float, default=1e-3)
 parser.add_argument('--discount_rate', type=float, default=0.99)
 parser.add_argument('--max_steps', type=int, default=200)
