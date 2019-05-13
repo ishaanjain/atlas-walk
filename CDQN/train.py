@@ -34,9 +34,7 @@ class Train:
         graph = tf.Graph()
         with graph.as_default():
             model = CDQN(self.args, env)
-
-            """ NOTE: uncomment once models have been implemented """
-            #saver = tf.train.Saver()
+            saver = tf.train.Saver(max_to_keep=2)
 
         with tf.Session(graph=graph) as sess:
             if self.args.load_model is not None: # restore graph and last saved training step
@@ -49,29 +47,44 @@ class Train:
                 start_step = step % self.args.max_steps
             else:
                 sess.run(tf.global_variables_initializer())
-                start_episode = 0
-                start_step = 0
+                start_episode = 1
+                start_step = 1
 
             try:
-                for episode in range(start_episode, self.args.max_episodes):
+                model.init_sess(sess)
+
+                for episode in range(start_episode, self.args.max_episodes+1):
                     state = env.reset()
                     rewards = []
 
-                    for step in range(start_step, self.args.max_steps):
+                    for step in range(start_step, self.args.max_steps+1):
                         if self.args.render:
                             env.render()
 
-                        """ NOTE: uncomment once functions have been implemented """
-                        #action = model.noisy_action(state)
-                        #next_state, reward, done, _ = env.step(action)
-                        #model.perceive(state, action, reward, next_state)
-                        #state = next_state
-                        #rewards.append(reward)
+                        action = model.noisy_action(state)
+                        next_state, reward, done, _ = env.step(action)
+                        model.perceive(state, action, reward, next_state)
+                        state = next_state
+                        rewards.append(reward)
+
+                        # save once a checkpoint is reached
+                        if (episode * step % self.args.checkpoint_frequency == 0):
+                            print('Saving models training progress to the `checkpoints` directory...')
+                            save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=step*episode)
+                            print('Model saved as {}'.format(save_path))
+
+                        if done:
+                            break
+
+                    model.exploration.reset()  # reset the exploration strategy after every episode
 
                     total_reward = np.mean(rewards)
                     print("Episode {} - Average reward: {}".format(episode, total_reward))
 
+                env.close()
+
             except KeyboardInterrupt: # save training progress upon user exit
+                env.close()
                 print('Saving models training progress to the `checkpoints` directory...')
                 save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=step)
                 print('Model saved as {}'.format(save_path))
