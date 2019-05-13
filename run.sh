@@ -15,5 +15,5 @@ then
     echo "Running humanoid environment with the continuous deep Q-learning model..."
     python3 CDQN/main.py ${@:2:$numargs}
 else
-    echo "Error: not a valid model type"
+    echo "Error: not a valid model type. Valid types are \"DDPG\" and \"CDQN\""
 fi
