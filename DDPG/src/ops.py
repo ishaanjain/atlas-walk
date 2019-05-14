@@ -2,6 +2,7 @@ import tensorflow as tf
 
 def fully_connected(inputs,
                     output_size,
+                    w_init=tf.glorot_uniform_initializer(),
                     batch_norm=True,
                     is_training=True,
                     scope=None):
@@ -9,7 +10,7 @@ def fully_connected(inputs,
         input_size = inputs.get_shape().as_list()[0]
 
         weights = tf.get_variable('weights', shape=[input_size, output_size],
-                                  dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
+                                  dtype=tf.float32, initializer=w_init)
 
         biases = tf.get_variable('biases', shape=[output_size], dtype=tf.float32,
                                  initializer=tf.constant_initializer(0.0))
@@ -22,9 +23,13 @@ def fully_connected(inputs,
         return dense
 
 
-def relu(inputs,
-         scope=None):
+def activation_function(inputs,
+         scope=None,
+         activation=tf.nn.relu):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        output = tf.nn.relu(inputs)
+        output = activation(inputs)
 
         return output
+
+#tf.random_uniform_initializer
+#mean_square: tf.square(self.predicted_q_value-self.out)
