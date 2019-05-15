@@ -10,7 +10,7 @@ class ReplayBuffer:
         """ Add a new transition to the replay buffer """
         transition = (state, action, reward, next_state)
 
-        if (len(self.memory) < self.buffer_size):
+        if (self.size() < self.buffer_size):
             self.buffer.append(transition)
         else:
             self.buffer.popleft()
