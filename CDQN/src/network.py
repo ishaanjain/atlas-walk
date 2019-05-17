@@ -1,4 +1,4 @@
-import ops
+import src.ops as ops
 import tensorflow as tf
 
 class Network:
@@ -14,12 +14,6 @@ class Network:
         self.train = tf.placeholder(tf.bool, name='train')
 
         self.build_model(scope=scope)
-
-    def init_sess(self, sess):
-        self.sess = sess
-
-    def predict(self):
-        pass
 
     def build_model(self, scope='CDQN'):
         with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
@@ -56,10 +50,13 @@ class Network:
             # create advantage function
             diff = tf.expand_dims(self.actions - mu, -1)
             diff_transpose = tf.transpose(diff, (0, 2, 1))
-            self.A = -0.5 * tf.reshape(tf.matmul(diff_transpose, tf.matmul(self.P, diff)), (None, 1))
+            self.A = -0.5 * tf.reshape(tf.matmul(diff_transpose, tf.matmul(self.P, diff)), [-1, 1])
 
             with tf.variable_scope('Q', reuse=tf.AUTO_REUSE):
                 self.Q = self.A + self.V
 
-            self.loss = ops.mean_squared_error(tf.squeeze(self.Q), self.target_y, scope='loss')
+            with tf.variable_scope('train', reuse=tf.AUTO_REUSE):
+                self.loss = ops.mean_squared_error(tf.squeeze(self.Q), self.target_y, scope='loss')
+                self.optimize = tf.train.AdamOptimizer(self.args.learning_rate).minimize(self.loss)
+
             self.variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope)
