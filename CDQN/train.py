@@ -47,13 +47,14 @@ class Train:
                 start_step = step % self.args.max_steps
             else:
                 sess.run(tf.global_variables_initializer())
-                start_episode = 1
+                start_episode = 0
                 start_step = 1
 
             try:
                 model.init_sess(sess)
+                model.copy_q_params()
 
-                for episode in range(start_episode, self.args.max_episodes+1):
+                for episode in range(start_episode, self.args.max_episodes):
                     state = env.reset()
                     rewards = []
 
@@ -68,10 +69,13 @@ class Train:
                         rewards.append(reward)
 
                         # save once a checkpoint is reached
-                        if (episode * step % self.args.checkpoint_frequency == 0):
+                        if (((episode*self.args.max_steps) + step) % self.args.checkpoint_frequency == 0):
                             print('Saving models training progress to the `checkpoints` directory...')
-                            save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=step*episode)
+                            save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=((episode*self.args.max_steps) + step))
                             print('Model saved as {}'.format(save_path))
+
+                        if (((episode*self.args.max_steps) + step) % self.args.display_frequency == 0):
+                            print ('Episode {} - Step {} - Average Reward: {}'.format(episode, step, np.mean(reward)))
 
                         if done:
                             break

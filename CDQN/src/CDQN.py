@@ -1,6 +1,8 @@
+import numpy as np
 import tensorflow as tf
 from src.network import Network
 from src.OUExploration import OUExploration
+from src.ReplayBuffer import ReplayBuffer
 
 class CDQN:
     def __init__(self, args, env):
@@ -14,11 +16,26 @@ class CDQN:
     def init_sess(self, sess):
         """ Initialize session of continuous deep Q-learning model """
         self.sess = sess
-        self.network.init_sess(sess)
-        self.target_network.init_sess(sess)
+
+    def copy_q_params(self):
+        """ copy Q network parameters into Q' """
+        for q_net_var, net_var in zip(self.target_network.variables, self.network.variables):
+            self.sess.run(q_net_var.assign(net_var))
+
+    def update_target_params(self):
+        """ update Q' networks parameters based on Q networks parameters """
+        for q_net_var, net_var in zip(self.target_network.variables, self.network.variables):
+            update = (self.args.tau * net_var) + ((1 - self.args.tau) * q_net_var)
+            self.sess.run(q_net_var.assign(update))
 
     def noisy_action(self, state):
-        pass
+        """ predict an action based on the current state and add some exploration noise to it """
+        observations = np.expand_dims(state, axis=0)
+        actions = self.sess.run(self.network.mu,
+                                feed_dict={self.network.observations: observations,
+                                           self.network.train: False})
+
+        return self.exploration.add_noise(actions[0])
 
     def perceive(self, state, action, reward, next_state):
         """ store transition in buffer and train on minibatches from buffer """
@@ -32,6 +49,19 @@ class CDQN:
         for iteration in range(self.args.update_repeat):
             states, actions, rewards, next_states = self.buffer.get_batch(self.args.batch_size)
 
+            # calculate value for target network
+            target_V = self.sess.run(self.target_network.V,
+                                     feed_dict={self.target_network.observations: next_states,
+                                                self.target_network.train: False})
+
+            # calculate target y
+            target_y = rewards + (self.args.discount_rate * np.squeeze(target_V))
+
             # update network
+            self.sess.run([self.network.optimize], feed_dict={self.network.observations: states,
+                                                              self.network.actions: actions,
+                                                              self.network.target_y: target_y,
+                                                              self.network.train: self.args.train})
 
             # update target network
+            self.update_target_params()

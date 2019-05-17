@@ -12,4 +12,3 @@ CDQN/checkpoints/
 DDPG/__pycache__/
 DDPG/src/__pycache__/
 DDPG/checkpoints/
-test.py

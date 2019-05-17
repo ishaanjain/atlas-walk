@@ -18,7 +18,7 @@ class ReplayBuffer:
 
     def get_batch(self, batch_size):
         """ Get a random sample of transitions from the replay buffer """
-        batch = map(list, zip(*random.sample(self.buffer, batch_size)))
+        batch = list(map(list, zip(*random.sample(self.buffer, batch_size))))
 
         return batch[0], batch[1], batch[2], batch[3]
 

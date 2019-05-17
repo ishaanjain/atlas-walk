@@ -8,7 +8,7 @@ def fully_connected(inputs,
                     is_training=True,
                     scope=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        input_size = inputs.shape[0]
+        input_size = inputs.get_shape().as_list()[1]
 
         weights = tf.get_variable('weights', shape=[input_size, output_size],
                                   dtype=tf.float32, initializer=w_init)
@@ -19,7 +19,12 @@ def fully_connected(inputs,
         dense = tf.matmul(inputs, weights) + biases
 
         if batch_norm:
-            dense = tf.layers.batch_normalization(dense, training=is_training, name='dense_batchnorm')
+            mean, variance = tf.nn.moments(dense, [0])
+            scale = tf.get_variable('scale', shape=[output_size], dtype=tf.float32,
+                                    initializer=tf.constant_initializer(1.0))
+            beta = tf.get_variable('beta', shape=[output_size], dtype=tf.float32,
+                                    initializer=tf.constant_initializer(0.0))
+            dense = tf.nn.batch_normalization(dense, mean, variance, beta, scale, 1e-3, name='batch_norm')
 
         return dense
 
@@ -47,7 +52,7 @@ def createLowerTriangle(linear_layer,
                         action_size,
                         scope='L'):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        l = tf.reshape(linear_layer, (None, action_size, action_size))
+        l = tf.reshape(linear_layer, [-1, action_size, action_size])
         diag = tf.matrix_diag_part(l)
         exponentiated_diag = tf.linalg.set_diag(l, tf.exp(diag))
         lowerTriangle = tf.linalg.band_part(exponentiated_diag, -1, 0)

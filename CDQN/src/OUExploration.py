@@ -14,7 +14,7 @@ class OUExploration:
 
   def add_noise(self, action):
     x = self.state
-    dx = self.theta * (self.mu - x) + self.sigma * nr.randn(len(x))
+    dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
     self.state = x + dx
 
     return action + self.state
