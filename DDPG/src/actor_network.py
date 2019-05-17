@@ -79,14 +79,10 @@ class ActorNetwork:
             target_update = ema.apply(net)
             target_net = [ema.average(x) for x in net]
 
-            # layer1 = ops.fully_connected(state_input, LAYER1_SIZE, w_init=W1, b_init=b1, is_training=is_train, scope="layer1")
             layer1_relu = ops.activation_function(tf.matmul(state_input, target_net[0]) + target_net[1], scope="layer1_relu")
-            # layer2 = ops.fully_connected(layer1_relu, LAYER2_SIZE, w_init=W2, b_init=b2, is_training=is_train, scope="layer2")
             layer2_relu = ops.activation_function(tf.matmul(layer1_relu, target_net[6]) + target_net[7], scope="layer2_relu")
-            # layer3 = ops.fully_connected(layer2_relu, action_dim, w_init=W3, b_init=b3, is_training=is_train, scope="layer3")
             action_output = ops.activation_function(tf.matmul(layer2_relu, target_net[12]) + target_net[13], scope="action_output", activation=tf.nn.tanh)
 
-        # variables = tf.contrib.framework.get_variables(scope="actor")
 
         return state_input, action_output, target_update, target_net
 
@@ -110,7 +106,6 @@ class ActorNetwork:
             self.state_input: state_batch
         })
         # print(self.sess.run([self.net[0], self.net[6], self.net[12]]))
-
 
     def actions(self, state_batch):
         return self.sess.run(self.action_output, feed_dict={

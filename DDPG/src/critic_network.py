@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import math
+import src.ops as ops
 
 LAYER1_SIZE = 400
 LAYER2_SIZE = 300
@@ -48,6 +49,22 @@ class CriticNetwork:
 
         state_input = tf.placeholder("float", [None, state_dim])
         action_input = tf.placeholder("float", [None, action_dim])
+
+        # W1 = self.randInit(state_dim)
+        # b1 = tf.constant_initializer(0.0)
+        # W2 = self.randInit(layer1_size + action_dim)
+        # W2_action = self.variable([action_dim, layer2_size], layer1_size + action_dim)
+        # b2 = tf.constant_initializer(0.0)
+        # W3 = tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3)
+        # b3 = tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3)
+        #
+        # layer1 = ops.fully_connected(state_input, LAYER1_SIZE, w_init=W1, b_init=b1, batch_norm=False, is_training=self.args.train,
+        #                              scope="layer1")
+        # layer1_relu = ops.activation_function(layer1, scope="layer1_relu")
+        # # layer2 = ops.fully_connected(layer1_relu, LAYER2_SIZE, w_init=W2, b_init=b2, is_training=self.args.is_train,
+        # #                              scope="layer2")
+        # layer2_relu = tf.nn.relu(tf.matmul(layer1_relu, W2) + tf.matmul(action_input, W2_action) + b2)
+        # q_value_output = tf.identity(tf.matmul(layer2_relu, W3) + b3)
 
         W1 = self.variable([state_dim, layer1_size], state_dim)
         b1 = self.variable([layer1_size], state_dim)
@@ -109,6 +126,9 @@ class CriticNetwork:
     def variable(self, shape, f):
         return tf.Variable(tf.random_uniform(shape, -1 / math.sqrt(f), 1 / math.sqrt(f)))
 
+
+    def randInit(self, f):
+        return tf.random_uniform_initializer(-1 / math.sqrt(f), 1 / math.sqrt(f))
 
 '''
 	def load_network(self):
