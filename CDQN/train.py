@@ -90,6 +90,6 @@ class Train:
             except KeyboardInterrupt: # save training progress upon user exit
                 env.close()
                 print('Saving models training progress to the `checkpoints` directory...')
-                save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=step)
+                save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=((episode*self.args.max_steps) + step))
                 print('Model saved as {}'.format(save_path))
                 sys.exit(0)

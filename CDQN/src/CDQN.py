@@ -19,14 +19,17 @@ class CDQN:
 
     def copy_q_params(self):
         """ copy Q network parameters into Q' """
-        for q_net_var, net_var in zip(self.target_network.variables, self.network.variables):
-            self.sess.run(q_net_var.assign(net_var))
+        updates = [q_net_var.assign(net_var) for q_net_var, net_var in zip(self.target_network.variables, self.network.variables)]
+        self.sess.run(updates)
 
     def update_target_params(self):
         """ update Q' networks parameters based on Q networks parameters """
-        for q_net_var, net_var in zip(self.target_network.variables, self.network.variables):
-            update = (self.args.tau * net_var) + ((1 - self.args.tau) * q_net_var)
-            self.sess.run(q_net_var.assign(update))
+        updates = [self.soft_update(q_net_var, net_var) for q_net_var, net_var in zip(self.target_network.variables, self.network.variables)]
+        self.sess.run(updates)
+
+    def soft_update(self, q_net_var, net_var):
+        update = (self.args.tau * net_var) + ((1 - self.args.tau) * q_net_var)
+        return q_net_var.assign(update)
 
     def noisy_action(self, state):
         """ predict an action based on the current state and add some exploration noise to it """
@@ -45,6 +48,7 @@ class CDQN:
             self.train_minibatch()
 
     def train_minibatch(self):
+        print('step')
         """ Train the model on a minibatch of samples from the replay buffer """
         for iteration in range(self.args.update_repeat):
             states, actions, rewards, next_states = self.buffer.get_batch(self.args.batch_size)
