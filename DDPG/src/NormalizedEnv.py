@@ -33,10 +33,10 @@ class NormalizedEnv(TimeLimit):
         return (self.rewards_scale * rewards) + self.rewards_shift
 
     def step(self, action):
-        normalized_action = np.clip(self.normalized_action(action), self.action_space.high, self.action_space.low)
+        normalized_action = np.clip(self.normalize_action(action), self.action_space.high, self.action_space.low)
 
         obs, reward, term, info = TimeLimit.step(self, normalized_action)
 
-        normalized_observation = self.normalized_observation(obs)
+        normalized_observation = self.normalize_observation(obs)
 
         return normalized_observation, reward, term, info

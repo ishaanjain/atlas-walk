@@ -3,33 +3,46 @@ import tensorflow as tf
 def fully_connected(inputs,
                     output_size,
                     w_init=tf.glorot_uniform_initializer(),
+                    b_init=tf.constant_initializer(0.0),
                     batch_norm=True,
                     is_training=True,
                     scope=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        input_size = inputs.get_shape().as_list()[0]
+        input_size = inputs.get_shape().as_list()[1]
 
         weights = tf.get_variable('weights', shape=[input_size, output_size],
                                   dtype=tf.float32, initializer=w_init)
 
         biases = tf.get_variable('biases', shape=[output_size], dtype=tf.float32,
-                                 initializer=tf.constant_initializer(0.0))
+                                 initializer=b_init)
 
         dense = tf.matmul(inputs, weights) + biases
 
-        if batch_norm:
-            dense = tf.layers.batch_normalization(dense, training=is_training, name='dense_batchnorm')
+        #if batch_norm:
+        #    mean, variance = tf.nn.moments(dense, [0])
+        #    scale = tf.get_variable('scale', shape=[output_size], dtype=tf.float32,
+        #                            initializer=tf.constant_initializer(1.0))
+        #    beta = tf.get_variable('beta', shape=[output_size], dtype=tf.float32,
+        #                            initializer=tf.constant_initializer(0.0))
+        #    dense = tf.nn.batch_normalization(dense, mean, variance, beta, scale, 1e-3, name='batch_norm')
 
         return dense
 
 
-def activation_function(inputs,
-         scope=None,
-         activation=tf.nn.relu):
+def activation_fn(inputs,
+                  fn=tf.nn.relu,
+                  scope=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        output = activation(inputs)
+        output = fn(inputs)
 
         return output
 
-#tf.random_uniform_initializer
-#mean_square: tf.square(self.predicted_q_value-self.out)
+
+def mean_squared_error(Q,
+                       target,
+                       scope=None):
+    with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
+        mse = tf.squared_difference(Q, target)
+        loss = tf.reduce_mean(mse, name='loss')
+
+        return loss
