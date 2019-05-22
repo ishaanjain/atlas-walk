@@ -11,10 +11,9 @@ L2 = 0.01
 class CriticNetwork:
     """docstring for CriticNetwork"""
 
-    def __init__(self, args, sess, state_dim, action_dim):
+    def __init__(self, args, state_dim, action_dim):
         self.args = args
         self.time_step = 0
-        self.sess = sess
         # create q network
         self.state_input, \
         self.action_input, \
@@ -25,14 +24,24 @@ class CriticNetwork:
         self.target_state_input, \
         self.target_action_input, \
         self.target_q_value_output, \
-        self.target_update = self.create_target_q_network(state_dim, action_dim, self.net)
+        self.target_variables = self.create_target_q_network(state_dim, action_dim, self.net)
 
         self.create_training_method()
 
-        # initialization
-        self.sess.run(tf.initialize_all_variables())
+        self.init_updates()
+        self.soft_updates(self.args.tau)
 
-        self.update_target()
+    def init_updates(self):
+        self.init_updates = [tar_param.assign(net_param) for tar_param, net_param in
+                             zip(self.target_variables, self.net)]
+
+    def soft_updates(self, tau):
+        self.soft_updates = [tar_param.assign((tau * net_param) + ((1 - tau) * (tar_param))) for tar_param, net_param in
+                             zip(self.target_variables, self.net)]
+
+    def init_sess(self, sess):
+        self.sess = sess
+        self.sess.run(self.init_updates)
 
     def create_training_method(self):
         # Define training optimizer
@@ -47,55 +56,52 @@ class CriticNetwork:
         layer1_size = LAYER1_SIZE
         layer2_size = LAYER2_SIZE
 
-        state_input = tf.placeholder("float", [None, state_dim])
-        action_input = tf.placeholder("float", [None, action_dim])
+        with tf.variable_scope("critic", reuse=tf.AUTO_REUSE):
+            state_input = tf.placeholder("float", [None, state_dim])
+            action_input = tf.placeholder("float", [None, action_dim])
 
-        # W1 = self.randInit(state_dim)
-        # b1 = tf.constant_initializer(0.0)
-        # W2 = self.randInit(layer1_size + action_dim)
-        # W2_action = self.variable([action_dim, layer2_size], layer1_size + action_dim)
-        # b2 = tf.constant_initializer(0.0)
-        # W3 = tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3)
-        # b3 = tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3)
-        #
-        # layer1 = ops.fully_connected(state_input, LAYER1_SIZE, w_init=W1, b_init=b1, batch_norm=False, is_training=self.args.train,
-        #                              scope="layer1")
-        # layer1_relu = ops.activation_function(layer1, scope="layer1_relu")
-        # # layer2 = ops.fully_connected(layer1_relu, LAYER2_SIZE, w_init=W2, b_init=b2, is_training=self.args.is_train,
-        # #                              scope="layer2")
-        # layer2_relu = tf.nn.relu(tf.matmul(layer1_relu, W2) + tf.matmul(action_input, W2_action) + b2)
-        # q_value_output = tf.identity(tf.matmul(layer2_relu, W3) + b3)
+            W1 = self.variable([state_dim, layer1_size], state_dim)
+            b1 = self.variable([layer1_size], state_dim)
+            W2 = self.variable([layer1_size, layer2_size], layer1_size + action_dim)
+            W2_action = self.variable([action_dim, layer2_size], layer1_size + action_dim)
+            b2 = self.variable([layer2_size], layer1_size + action_dim)
+            W3 = tf.Variable(tf.random_uniform([layer2_size, 1], -3e-3, 3e-3))
+            b3 = tf.Variable(tf.random_uniform([1], -3e-3, 3e-3))
 
-        W1 = self.variable([state_dim, layer1_size], state_dim)
-        b1 = self.variable([layer1_size], state_dim)
-        W2 = self.variable([layer1_size, layer2_size], layer1_size + action_dim)
-        W2_action = self.variable([action_dim, layer2_size], layer1_size + action_dim)
-        b2 = self.variable([layer2_size], layer1_size + action_dim)
-        W3 = tf.Variable(tf.random_uniform([layer2_size, 1], -3e-3, 3e-3))
-        b3 = tf.Variable(tf.random_uniform([1], -3e-3, 3e-3))
+            layer1 = tf.nn.relu(tf.matmul(state_input, W1) + b1)
+            layer2 = tf.nn.relu(tf.matmul(layer1, W2) + tf.matmul(action_input, W2_action) + b2)
+            q_value_output = tf.identity(tf.matmul(layer2, W3) + b3)
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope="critic")
 
-        layer1 = tf.nn.relu(tf.matmul(state_input, W1) + b1)
-        layer2 = tf.nn.relu(tf.matmul(layer1, W2) + tf.matmul(action_input, W2_action) + b2)
-        q_value_output = tf.identity(tf.matmul(layer2, W3) + b3)
-
-        return state_input, action_input, q_value_output, [W1, b1, W2, W2_action, b2, W3, b3]
+        return state_input, action_input, q_value_output, variables
 
     def create_target_q_network(self, state_dim, action_dim, net):
-        state_input = tf.placeholder("float", [None, state_dim])
-        action_input = tf.placeholder("float", [None, action_dim])
+        # the layer size could be changed
+        layer1_size = LAYER1_SIZE
+        layer2_size = LAYER2_SIZE
 
-        ema = tf.train.ExponentialMovingAverage(decay=1 - self.args.tau)
-        target_update = ema.apply(net)
-        target_net = [ema.average(x) for x in net]
+        with tf.variable_scope("target_critic", reuse=tf.AUTO_REUSE):
+            W1 = self.variable([state_dim, layer1_size], state_dim)
+            state_input = tf.placeholder("float", [None, state_dim])
+            action_input = tf.placeholder("float", [None, action_dim])
 
-        layer1 = tf.nn.relu(tf.matmul(state_input, target_net[0]) + target_net[1])
-        layer2 = tf.nn.relu(tf.matmul(layer1, target_net[2]) + tf.matmul(action_input, target_net[3]) + target_net[4])
-        q_value_output = tf.identity(tf.matmul(layer2, target_net[5]) + target_net[6])
+            b1 = self.variable([layer1_size], state_dim)
+            W2 = self.variable([layer1_size, layer2_size], layer1_size + action_dim)
+            W2_action = self.variable([action_dim, layer2_size], layer1_size + action_dim)
+            b2 = self.variable([layer2_size], layer1_size + action_dim)
+            W3 = tf.Variable(tf.random_uniform([layer2_size, 1], -3e-3, 3e-3))
+            b3 = tf.Variable(tf.random_uniform([1], -3e-3, 3e-3))
 
-        return state_input, action_input, q_value_output, target_update
+            layer1 = tf.nn.relu(tf.matmul(state_input, W1) + b1)
+            layer2 = tf.nn.relu(tf.matmul(layer1, W2) + tf.matmul(action_input, W2_action) + b2)
+            q_value_output = tf.identity(tf.matmul(layer2, W3) + b3)
+
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope="target_critic")
+
+        return state_input, action_input, q_value_output, variables
 
     def update_target(self):
-        self.sess.run(self.target_update)
+        self.sess.run(self.soft_updates)
 
     def train(self, y_batch, state_batch, action_batch):
         self.time_step += 1
@@ -129,17 +135,3 @@ class CriticNetwork:
 
     def randInit(self, f):
         return tf.random_uniform_initializer(-1 / math.sqrt(f), 1 / math.sqrt(f))
-
-'''
-	def load_network(self):
-		self.saver = tf.train.Saver()
-		checkpoint = tf.train.get_checkpoint_state("saved_critic_networks")
-		if checkpoint and checkpoint.model_checkpoint_path:
-			self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
-			print "Successfully loaded:", checkpoint.model_checkpoint_path
-		else:
-			print "Could not find old network weights"
-	def save_network(self,time_step):
-		print 'save critic-network...',time_step
-		self.saver.save(self.sess, 'saved_critic_networks/' + 'critic-network', global_step = time_step)
-'''

@@ -24,11 +24,13 @@ class DDPG:
 
         # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
         self.exploration_noise = OUNoise(self.action_dim)
+        self.actor_network = ActorNetwork(self.args, self.state_dim, self.action_dim)
+        self.critic_network = CriticNetwork(self.args, self.state_dim, self.action_dim)
 
     def initSess(self, sess):
         self.sess = sess
-        self.actor_network = ActorNetwork(self.args, self.sess, self.state_dim, self.action_dim)
-        self.critic_network = CriticNetwork(self.args, self.sess, self.state_dim, self.action_dim)
+        self.actor_network.init_sess(self.sess)
+        self.critic_network.init_sess(self.sess)
 
     def train(self):
         # print "train step",self.time_step

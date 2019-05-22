@@ -8,8 +8,8 @@ def fully_connected(inputs,
                     is_training=True,
                     scope=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        # input_size = inputs.get_shape().as_list()[0]
-        input_size = inputs.shape[1]
+        input_size = inputs.get_shape().as_list()[1]
+        # input_size = inputs.shape[1]
 
         weights = tf.get_variable('weights', shape=[input_size, output_size],
                                   dtype=tf.float32, initializer=w_init)
@@ -19,8 +19,8 @@ def fully_connected(inputs,
 
         dense = tf.matmul(inputs, weights) + biases
 
-        if batch_norm:
-            dense = tf.layers.batch_normalization(dense, training=is_training, name='dense_batchnorm')
+        # if batch_norm:
+        #     dense = tf.layers.batch_normalization(dense, training=is_training, name='dense_batchnorm')
 
         return dense
 

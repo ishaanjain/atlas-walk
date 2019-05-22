@@ -28,17 +28,17 @@ class Train:
                 sys.exit(1)
 
         # create the humanoid environment
-        env = NormalizedEnv(gym.make("RoboschoolHumanoid-v1"))
+        env = NormalizedEnv(gym.make("RoboschoolInvertedDoublePendulum-v1"))
 
         # build graph for DDPG network
         graph = tf.Graph()
         with graph.as_default():
             model = DDPG(self.args, env)
+            saver = tf.train.Saver()
 
 
         with tf.Session(graph=graph) as sess:
             model.initSess(sess)
-            saver = tf.train.Saver()
 
             if self.args.load_model is not None: # restore graph and last saved training step
                 ckpt = tf.train.get_checkpoint_state(checkpoint)
@@ -50,6 +50,7 @@ class Train:
                 start_step = step % self.args.max_steps
             else:
                 sess.run(tf.global_variables_initializer())
+
                 start_episode = 0
                 start_step = 0
 
