@@ -36,7 +36,7 @@ class Test:
             saver.restore(sess, ckpt)
             rewards = []
 
-            for episode in range(self.args.max_episodes):
+            for episode in range(100):
                 state = env.reset()
 
                 for _ in range(env.spec.timestep_limit):
@@ -50,5 +50,5 @@ class Test:
                     if done:
                         break
 
-                total_reward = np.sum(rewards) / self.args.max_episodes
+                total_reward = np.sum(rewards) / 100
                 print("Episode {} - Average reward: {}".format(episode, total_reward))

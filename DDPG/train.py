@@ -82,9 +82,9 @@ class Train:
                 save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=((episode*self.args.max_steps) + step))
                 print('Model saved as {}'.format(save_path))
 
-                for episode in range(self.args.max_episodes):
+                rewards = []
+                for episode in range(100):
                     state = env.reset()
-                    rewards = []
 
                     for step in range(env.spec.timestep_limit):
                         env.render()
@@ -95,5 +95,5 @@ class Train:
                         if done:
                             break
 
-                    total_reward = np.mean(rewards)
+                    total_reward = np.sum(rewards) / 100
                     print("Average reward: {}".format(total_reward))
