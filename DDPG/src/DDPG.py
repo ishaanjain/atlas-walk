@@ -26,24 +26,22 @@ class DDPG:
 
     def action(self, state):
         states = np.expand_dims(state, axis=0)
-        actions = self.Actor.predict(states)
+        actions = self.Actor.predict_action(states)
         return actions[0]
 
     def noisy_action(self, state):
-        states = np.expand_dims(state, axis=0)
-        actions = self.Actor.predict(states)
-        action = actions[0]
-        return action + self.exploration.noise()
+        return self.action(state) + self.exploration.noise()
 
     def perceive(self, state, action, reward, done, next_state):
         self.ReplayBuffer.add(state, action, reward, done, next_state)
 
-        if (self.ReplayBuffer.size() > self.args.batch_size):
+        if (self.ReplayBuffer.size() > 10000):
             self.train_minibatch()
 
     def train_minibatch(self):
         states, actions, rewards, dones, next_states = self.ReplayBuffer.get_batch(self.args.batch_size)
 
+        actions = np.reshape(actions, [self.args.batch_size, self.action_dim])
         dones = np.asarray([int(done) for done in dones], dtype=np.float32)
 
         target_q = self.Critic.predict_target(next_states,

@@ -35,7 +35,6 @@ class Train:
         with graph.as_default():
             model = DDPG(self.args, env)
             saver = tf.train.Saver(max_to_keep=2)
-            sys.exit(0)
 
         with tf.Session(graph=graph) as sess:
             if self.args.load_model is not None: # restore graph and last saved training step
@@ -90,7 +89,7 @@ class Train:
                     for step in range(env.spec.timestep_limit):
                         env.render()
                         action = model.action(state)
-                        next_state, reward, done, _ = env.step(action)
+                        state, reward, done, _ = env.step(action)
                         rewards.append(reward)
 
                         if done:

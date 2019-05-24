@@ -3,7 +3,7 @@ import tensorflow as tf
 def fully_connected(inputs,
                     output_size,
                     w_init=tf.glorot_uniform_initializer(),
-                    b_init=tf.constant_initializer(0.0),
+                    b_init=tf.glorot_uniform_initializer(),
                     batch_norm=True,
                     is_training=True,
                     scope=None):

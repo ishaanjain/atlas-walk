@@ -34,10 +34,10 @@ class Test:
             model.init_sess(sess)
             ckpt = tf.train.latest_checkpoint(checkpoint)
             saver.restore(sess, ckpt)
+            rewards = []
 
-            for _ in range(self.args.max_episodes):
+            for episode in range(self.args.max_episodes):
                 state = env.reset()
-                rewards = []
 
                 for _ in range(env.spec.timestep_limit):
                     if self.args.render:
@@ -50,5 +50,5 @@ class Test:
                     if done:
                         break
 
-                total_reward = np.mean(rewards)
-                print("Average reward: {}".format(total_reward))
+                total_reward = np.sum(rewards) / self.args.max_episodes
+                print("Episode {} - Average reward: {}".format(episode, total_reward))
