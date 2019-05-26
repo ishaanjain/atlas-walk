@@ -6,7 +6,7 @@ from gym.wrappers.time_limit import TimeLimit
 
 class NormalizedEnv(TimeLimit):
     def __init__(self, env):
-        TimeLimit.__init__(self, env)
+        self.__dict__.update(env.__dict__) # transfer properties
 
         self.observation_scale = np.ones_like(self.observation_space.high)
         self.observation_shift = np.zeros_like(self.observation_space.high)
@@ -27,13 +27,13 @@ class NormalizedEnv(TimeLimit):
         return (observation - self.observation_shift) / self.observation_scale
 
     def normalize_action(self, action):
-        return (self.action_scale * action) + self.action_scale
+        return (self.action_scale * action) + self.action_shift
 
     def normalize_reward(self, rewards):
         return (self.rewards_scale * rewards) + self.rewards_shift
 
     def step(self, action):
-        normalized_action = np.clip(self.normalize_action(action), self.action_space.high, self.action_space.low)
+        normalized_action = np.clip(self.normalize_action(action), self.action_space.low, self.action_space.high)
 
         obs, reward, term, info = TimeLimit.step(self, normalized_action)
 
