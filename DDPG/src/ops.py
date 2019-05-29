@@ -4,7 +4,7 @@ def fully_connected(inputs,
                     output_size,
                     w_init=tf.glorot_uniform_initializer(),
                     b_init=tf.glorot_uniform_initializer(),
-                    batch_norm=True,
+                    batch_norm=False,
                     is_training=True,
                     scope=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
@@ -18,13 +18,13 @@ def fully_connected(inputs,
 
         dense = tf.matmul(inputs, weights) + biases
 
-        #if batch_norm:
-        #    mean, variance = tf.nn.moments(dense, [0])
-        #    scale = tf.get_variable('scale', shape=[output_size], dtype=tf.float32,
-        #                            initializer=tf.constant_initializer(1.0))
-        #    beta = tf.get_variable('beta', shape=[output_size], dtype=tf.float32,
-        #                            initializer=tf.constant_initializer(0.0))
-        #    dense = tf.nn.batch_normalization(dense, mean, variance, beta, scale, 1e-3, name='batch_norm')
+        if batch_norm:
+            mean, variance = tf.nn.moments(dense, [0])
+            scale = tf.get_variable('scale', shape=[output_size], dtype=tf.float32,
+                                    initializer=tf.constant_initializer(1.0))
+            beta = tf.get_variable('beta', shape=[output_size], dtype=tf.float32,
+                                    initializer=tf.constant_initializer(0.0))
+            dense = tf.nn.batch_normalization(dense, mean, variance, beta, scale, 1e-3, name='batch_norm')
 
         return dense
 
