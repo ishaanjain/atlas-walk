@@ -53,71 +53,32 @@ class Critic:
 
     def build_critic(self, scope=None):
         with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-            # the layer size could be changed
-            layer1_size = 400
-            layer2_size = 300
+            layer1 = ops.fully_connected(self.inputs, 400, scope='layer1')
+            layer1_act = ops.activation_fn(layer1, scope='layer1_act')
+            layer2 = ops.fully_connected(layer1_act, 300, use_bias=False, scope='layer2')
+            actions_layer = ops.fully_connected(self.actions, 300, scope='actions_layer')
+            layer2_act = ops.activation_fn(layer2 + actions_layer, scope='layer2_act')
+            output = ops.fully_connected(layer2_act, 1, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
+                                         b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
 
-            W1 = self.variable([self.observation_size,layer1_size], self.observation_size)
-            b1 = self.variable([layer1_size], self.observation_size)
-            W2 = self.variable([layer1_size,layer2_size],layer1_size+self.action_size)
-            W2_action = self.variable([self.action_size,layer2_size],layer1_size+self.action_size)
-            b2 = self.variable([layer2_size],layer1_size+self.action_size)
-            W3 = tf.Variable(tf.random_uniform([layer2_size,1],-3e-3,3e-3))
-            b3 = tf.Variable(tf.random_uniform([1],-3e-3,3e-3))
-
-            layer1 = tf.nn.relu(tf.matmul(self.inputs,W1) + b1)
-            layer2 = tf.nn.relu(tf.matmul(layer1,W2) + tf.matmul(self.actions,W2_action) + b2)
-            q_value_output = tf.identity(tf.matmul(layer2,W3) + b3)
-
-            self.output = q_value_output
-
-            #layer1 = ops.fully_connected(self.inputs, 400, scope='layer1')
-            #layer1_act = ops.activation_fn(layer1, scope='layer1_act')
-            #layer2 = ops.fully_connected(layer1_act, 300, scope='layer2')
-            #actions_layer = ops.fully_connected(self.actions, 300, scope='actions_layer')
-            #layer2_act = ops.activation_fn(layer2 + actions_layer, scope='layer2_act')
-            #layer2 = ops.fully_connected(tf.concat([layer1_act, self.actions], axis=-1), 300, scope='layer2')
-            #layer2_act = ops.activation_fn(layer2, scope='layer2_act')
-            #layer3 = ops.fully_connected(layer2_act, 1, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
-            #                             b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
-            #output = ops.activation_fn(layer3, fn=tf.nn.tanh, scope='output')
-
-            #self.output = tf.identity(output)
+            self.output = tf.identity(output)
 
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
 
     def build_target_critic(self, scope=None):
         with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-            layer1_size = 400
-            layer2_size = 300
+            layer1 = ops.fully_connected(self.target_inputs, 400, scope='layer1')
+            layer1_act = ops.activation_fn(layer1, scope='layer1_act')
+            layer2 = ops.fully_connected(layer1_act, 300, use_bias=False, scope='layer2')
+            actions_layer = ops.fully_connected(self.target_actions, 300, scope='actions_layer')
+            layer2_act = ops.activation_fn(layer2 + actions_layer, scope='layer2_act')
+            output = ops.fully_connected(layer2_act, 1, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
+                                         b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
 
-            W1 = self.variable([self.observation_size,layer1_size], self.observation_size)
-            b1 = self.variable([layer1_size], self.observation_size)
-            W2 = self.variable([layer1_size,layer2_size],layer1_size+self.action_size)
-            W2_action = self.variable([self.action_size,layer2_size],layer1_size+self.action_size)
-            b2 = self.variable([layer2_size],layer1_size+self.action_size)
-            W3 = tf.Variable(tf.random_uniform([layer2_size,1],-3e-3,3e-3))
-            b3 = tf.Variable(tf.random_uniform([1],-3e-3,3e-3))
+            self.target_output = tf.identity(output)
+
             self.target_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
-
             self.soft_updates = [tar_param.assign((self.args.tau * net_param) + ((1 - self.args.tau) * tar_param)) for tar_param, net_param in zip(self.target_variables, self.variables)]
-
-            layer1 = tf.nn.relu(tf.matmul(self.target_inputs,W1) + b1)
-            layer2 = tf.nn.relu(tf.matmul(layer1,W2) + tf.matmul(self.target_actions,W2_action) + b2)
-            q_value_output = tf.identity(tf.matmul(layer2,W3) + b3)
-
-            self.target_output = q_value_output
-
-            #layer1 = ops.fully_connected(self.target_inputs, 400, scope='layer1')
-            #layer1_act = ops.activation_fn(layer1, scope='layer1_act')
-            #layer2 = ops.fully_connected(layer1_act, 300, scope='layer2')
-            #actions_layer = ops.fully_connected(self.target_actions, 300, scope='actions_layer')
-            #layer2_act = ops.activation_fn(layer2 + actions_layer, scope='layer2_act')
-            #layer3 = ops.fully_connected(layer2_act, 1, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
-            #                             b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
-            #output = ops.activation_fn(layer3, fn=tf.nn.tanh, scope='output')
-
-            #self.target_output = output
 
     def variable(self,shape,f):
         return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))

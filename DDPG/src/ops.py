@@ -2,8 +2,9 @@ import tensorflow as tf
 
 def fully_connected(inputs,
                     output_size,
-                    w_init=tf.glorot_uniform_initializer(),
-                    b_init=tf.glorot_uniform_initializer(),
+                    w_init=tf.initializers.lecun_normal(),
+                    b_init=tf.initializers.lecun_normal(),
+                    use_bias=True,
                     batch_norm=False,
                     is_training=True,
                     scope=None):
@@ -13,10 +14,13 @@ def fully_connected(inputs,
         weights = tf.get_variable('weights', shape=[input_size, output_size],
                                   dtype=tf.float32, initializer=w_init)
 
-        biases = tf.get_variable('biases', shape=[output_size], dtype=tf.float32,
-                                 initializer=b_init)
+        if (use_bias):
+            biases = tf.get_variable('biases', shape=[output_size], dtype=tf.float32,
+                                    initializer=b_init)
 
-        dense = tf.matmul(inputs, weights) + biases
+            dense = tf.matmul(inputs, weights) + biases
+        else:
+            dense = tf.matmul(inputs, weights)
 
         if batch_norm:
             mean, variance = tf.nn.moments(dense, [0])

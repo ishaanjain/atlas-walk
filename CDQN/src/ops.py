@@ -4,7 +4,7 @@ def fully_connected(inputs,
                     output_size,
                     w_init=tf.glorot_uniform_initializer(),
                     b_init=tf.constant_initializer(0.0),
-                    batch_norm=True,
+                    batch_norm=False,
                     is_training=True,
                     scope=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):

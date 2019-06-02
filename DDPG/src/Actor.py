@@ -49,64 +49,32 @@ class Actor:
 
     def build_actor(self, scope=None):
         with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-            layer1_size = 400
-            layer2_size = 300
+            layer1 = ops.fully_connected(self.inputs, 400, scope='layer1')
+            layer1_act = ops.activation_fn(layer1, scope='layer1_act')
+            layer2 = ops.fully_connected(layer1_act, 300, scope='layer2')
+            layer2_act = ops.activation_fn(layer2, scope='layer2_act')
+            layer3 = ops.fully_connected(layer2_act, self.action_size, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
+                                         b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
+            output = ops.activation_fn(layer3, fn=tf.nn.tanh, scope='output')
 
-            W1 = self.variable([self.observation_size,layer1_size], self.observation_size)
-            b1 = self.variable([layer1_size],self.observation_size)
-            W2 = self.variable([layer1_size,layer2_size],layer1_size)
-            b2 = self.variable([layer2_size],layer1_size)
-            W3 = tf.Variable(tf.random_uniform([layer2_size,self.action_size],-3e-3,3e-3))
-            b3 = tf.Variable(tf.random_uniform([self.action_size],-3e-3,3e-3))
-
-            layer1 = tf.nn.relu(tf.matmul(self.inputs,W1) + b1)
-            layer2 = tf.nn.relu(tf.matmul(layer1,W2) + b2)
-            action_output = tf.tanh(tf.matmul(layer2,W3) + b3)
-
-            self.output = action_output
-
-            #layer1 = ops.fully_connected(self.inputs, 400, scope='layer1')
-            #layer1_act = ops.activation_fn(layer1, scope='layer1_act')
-            #layer2 = ops.fully_connected(layer1_act, 300, scope='layer2')
-            #layer2_act = ops.activation_fn(layer2, scope='layer2_act')
-            #layer3 = ops.fully_connected(layer2_act, self.action_size, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
-            #                             b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
-            #output = ops.activation_fn(layer3, fn=tf.nn.tanh, scope='output')
-
-            #self.output = output
+            self.output = output
 
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
 
     def build_target_actor(self, scope=None):
         with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-            layer1_size = 400
-            layer2_size = 300
+            layer1 = ops.fully_connected(self.target_inputs, 400, scope='layer1')
+            layer1_act = ops.activation_fn(layer1, scope='layer1_act')
+            layer2 = ops.fully_connected(layer1_act, 300, scope='layer2')
+            layer2_act = ops.activation_fn(layer2, scope='layer2_act')
+            layer3 = ops.fully_connected(layer2_act, self.action_size, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
+                                         b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
+            output = ops.activation_fn(layer3, fn=tf.nn.tanh, scope='output')
 
-            W1 = self.variable([self.observation_size,layer1_size], self.observation_size)
-            b1 = self.variable([layer1_size],self.observation_size)
-            W2 = self.variable([layer1_size,layer2_size],layer1_size)
-            b2 = self.variable([layer2_size],layer1_size)
-            W3 = tf.Variable(tf.random_uniform([layer2_size,self.action_size],-3e-3,3e-3))
-            b3 = tf.Variable(tf.random_uniform([self.action_size],-3e-3,3e-3))
+            self.target_output = output
+
             self.target_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
-
             self.soft_updates = [tar_param.assign((self.args.tau * net_param) + ((1 - self.args.tau) * tar_param)) for tar_param, net_param in zip(self.target_variables, self.variables)]
-
-            layer1 = tf.nn.relu(tf.matmul(self.target_inputs,W1) + b1)
-            layer2 = tf.nn.relu(tf.matmul(layer1,W2) + b2)
-            action_output = tf.tanh(tf.matmul(layer2,W3) + b3)
-
-            self.target_output = action_output
-
-            #layer1 = ops.fully_connected(self.target_inputs, 400, scope='layer1')
-            #layer1_act = ops.activation_fn(layer1, scope='layer1_act')
-            #layer2 = ops.fully_connected(layer1_act, 300, scope='layer2')
-            #layer2_act = ops.activation_fn(layer2, scope='layer2_act')
-            #layer3 = ops.fully_connected(layer2_act, self.action_size, w_init=tf.random_uniform_initializer(-3e-3, 3e-3),
-            #                             b_init=tf.random_uniform_initializer(-3e-3, 3e-3), scope='layer3')
-            #output = ops.activation_fn(layer3, fn=tf.nn.tanh, scope='output')
-
-            #self.target_output = output
 
     def variable(self,shape,f):
         return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))

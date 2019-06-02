@@ -28,7 +28,7 @@ class Train:
                 sys.exit(1)
 
         # create the humanoid environment
-        env = NormalizedEnv(gym.make("RoboschoolInvertedDoublePendulum-v1"))
+        env = NormalizedEnv(gym.make("RoboschoolHumanoid-v1"))
 
         # build graph for DDPG network
         graph = tf.Graph()
@@ -52,8 +52,6 @@ class Train:
 
             try:
                 model.init_sess(sess)
-                #sess.run(model.Actor.init_updates)
-                #sess.run(model.Critic.init_updates)
 
                 for episode in range(start_episode, self.args.max_episodes):
                     state = env.reset()

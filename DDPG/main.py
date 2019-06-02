@@ -11,7 +11,7 @@ parser.add_argument('--batch_size', type=int, default=100)
 parser.add_argument('--tau', type=float, default=1e-3)
 parser.add_argument('--discount_rate', type=float, default=0.99)
 parser.add_argument('--max_steps', type=int, default=200)
-parser.add_argument('--max_episodes', type=int, default=10000)
+parser.add_argument('--max_episodes', type=int, default=15000)
 parser.add_argument('--update_repeats', type=int, default=10)
 parser.add_argument('--buffer_size', type=int, default=1000000)
 

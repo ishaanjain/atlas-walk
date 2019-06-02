@@ -28,7 +28,7 @@ class Train:
                 sys.exit(1)
 
         # create the humanoid environment
-        env = NormalizedEnv(gym.make("RoboschoolHumanoid-v1"))
+        env = NormalizedEnv(gym.make("RoboschoolInvertedDoublePendulum-v1"))
 
         # build graph for CDQN network
         graph = tf.Graph()
@@ -52,7 +52,9 @@ class Train:
 
             try:
                 model.init_sess(sess)
-                model.copy_q_params()
+
+                if self.args.load_model is None:
+                    model.copy_params()
 
                 for episode in range(start_episode, self.args.max_episodes):
                     state = env.reset()
@@ -64,7 +66,7 @@ class Train:
 
                         action = model.noisy_action(state)
                         next_state, reward, done, _ = env.step(action)
-                        model.perceive(state, action, reward, next_state)
+                        model.perceive(state, action, reward, done, next_state)
                         state = next_state
                         rewards.append(reward)
 
@@ -74,8 +76,8 @@ class Train:
                             save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=((episode*self.args.max_steps) + step))
                             print('Model saved as {}'.format(save_path))
 
-                        if (((episode*self.args.max_steps) + step) % self.args.display_frequency == 0):
-                            print ('Episode {} - Step {} - Average Reward: {}'.format(episode, step, np.mean(reward)))
+                        #if (((episode*self.args.max_steps) + step) % self.args.display_frequency == 0):
+                        #    print ('Episode {} - Step {} - Average Reward: {}'.format(episode, step, np.mean(reward)))
 
                         if done:
                             break
@@ -92,4 +94,19 @@ class Train:
                 print('Saving models training progress to the `checkpoints` directory...')
                 save_path = saver.save(sess, checkpoint + '/model.ckpt', global_step=((episode*self.args.max_steps) + step))
                 print('Model saved as {}'.format(save_path))
-                sys.exit(0)
+
+                rewards = []
+                for episode in range(100):
+                    state = env.reset()
+
+                    for step in range(env.spec.timestep_limit):
+                        env.render()
+                        action = model.action(state)
+                        state, reward, done, _ = env.step(action)
+                        rewards.append(reward)
+
+                        if done:
+                            break
+
+                    total_reward = np.sum(rewards) / 100
+                    print("Average reward: {}".format(total_reward))

@@ -22,7 +22,7 @@ class Network:
                 hidden = self.observations
 
                 for idx in range(2):
-                    hidden = ops.fully_connected(hidden, 100, w_init=tf.random_uniform_initializer(-0.05, 0.05),
+                    hidden = ops.fully_connected(hidden, 200, w_init=tf.random_uniform_initializer(-0.05, 0.05),
                                                 is_training=self.train, scope='hid'+str(idx))
                     hidden = ops.activation_fn(hidden, fn=tf.nn.tanh, scope='hidden_act'+str(idx))
 
@@ -33,16 +33,30 @@ class Network:
 
             # neural network layers for advantage function
             with tf.variable_scope('advantage', reuse=tf.AUTO_REUSE):
-                linear_layer = ops.fully_connected(hidden, self.action_size**2,
-                                                   w_init=tf.random_uniform_initializer(-0.05, 0.05),
-                                                   is_training=self.train, scope='linear_layer')
+                l = ops.fully_connected(hidden, (self.action_size * (self.action_size+1))//2,
+                                        w_init=tf.random_uniform_initializer(-0.05, 0.05),
+                                        is_training=self.train, scope='linear_layer')
 
                 mu = ops.fully_connected(hidden, self.action_size, w_init=tf.random_uniform_initializer(-0.05, 0.05),
                                         is_training=self.train, scope='mu')
                 self.mu = ops.activation_fn(mu, fn=tf.nn.tanh, scope='mu_act')
 
+            pivot = 0
+            rows = []
+            for idx in range(self.action_size):
+                count = self.action_size - idx
+
+                diag_elem = tf.exp(tf.slice(l, (0, pivot), (-1, 1)))
+                non_diag_elems = tf.slice(l, (0, pivot+1), (-1, count-1))
+                row = tf.pad(tf.concat((diag_elem, non_diag_elems), 1), ((0, 0), (idx, 0)))
+                rows.append(row)
+
+                pivot += count
+
+            self.L = tf.transpose(tf.stack(rows, axis=1), (0, 2, 1))
+
             # create lower triangular matrix with exponentiated diagonal from linear neural network layer
-            self.L = ops.createLowerTriangle(linear_layer, self.action_size)
+            #self.L = ops.createLowerTriangle(self.linear_layer, self.action_size)
 
             # create positive definite matrix by multipting L and L transpose
             self.P = tf.matmul(self.L, tf.transpose(self.L, (0, 2, 1)))

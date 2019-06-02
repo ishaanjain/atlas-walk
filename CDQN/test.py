@@ -22,7 +22,7 @@ class Test:
             sys.exit(1)
 
         # create the humanoid environment
-        env = NormalizedEnv(gym.make("RoboschoolHumanoid-v1"))
+        env = NormalizedEnv(gym.make("RoboschoolInvertedDoublePendulum-v1"))
 
         # build graph for CDQN network
         graph = tf.Graph()
@@ -31,6 +31,7 @@ class Test:
             saver = tf.train.Saver()
 
         with tf.Session(graph=graph) as sess:
+            model.init_sess(sess)
             ckpt = tf.train.latest_checkpoint(checkpoint)
             saver.restore(sess, ckpt)
 

@@ -6,9 +6,9 @@ class ReplayBuffer:
         self.buffer_size = buffer_size
         self.buffer = deque()
 
-    def add(self, state, action, reward, next_state):
+    def add(self, state, action, reward, done, next_state):
         """ Add a new transition to the replay buffer """
-        transition = (state, action, reward, next_state)
+        transition = (state, action, reward, done, next_state)
 
         if (self.size() < self.buffer_size):
             self.buffer.append(transition)
@@ -20,7 +20,7 @@ class ReplayBuffer:
         """ Get a random sample of transitions from the replay buffer """
         batch = list(map(list, zip(*random.sample(self.buffer, batch_size))))
 
-        return batch[0], batch[1], batch[2], batch[3]
+        return batch[0], batch[1], batch[2], batch[3], batch[4]
 
     def size(self):
         """ Get the current number of transitions in the replay buffer """
